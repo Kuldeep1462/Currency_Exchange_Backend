@@ -1,136 +1,180 @@
-# Currency Exchange Quotes API
+# 💱 Currency Exchange Quotes API
 
-A small Node.js + Express API that fetches USD currency quotes for regions (BRL/ARS), computes averages and per-source slippage, and exposes simple endpoints for use in Postman or other clients.
+🚀 **Live API:** [https://currency-exchange-backend-2zim.onrender.com/](https://currency-exchange-backend-2zim.onrender.com/)
 
-This project scrapes public web pages and also falls back to a free public exchange-rate API when scraping fails. It includes a light in-memory cache and an optional Postgres persistence layer.
+---
 
-Contents
-- Endpoints and example requests
-- How to install and run (PowerShell on Windows)
-- Environment variables
-- Debugging and test helpers
-- Notes about scraping, fallbacks and reliability
+### 📘 Overview
 
-## Quick start (Windows PowerShell)
+**Currency Exchange Quotes API** is a lightweight **Node.js + Express** service that fetches live USD currency quotes for different regions (currently supports **BRL** and **ARS**), computes averages and slippage, and exposes clean JSON endpoints for integration or testing in **Postman**.
 
-1. Open PowerShell in the project root and install dependencies:
+The system:
+- Scrapes real-time rates from multiple financial websites.
+- Falls back to a free public exchange-rate API when scraping fails.
+- Caches data in memory for speed.
+- Optionally stores rates in a **PostgreSQL** database.
 
-```powershell
-cd C:\Users\ks\Desktop\currency-exchange-api
-npm install
+---
+
+## ⚙️ Features
+
+✅ Fetches real-time currency quotes (USD/BRL, USD/ARS)  
+✅ Computes **average buy/sell prices** across sources  
+✅ Calculates **per-source slippage** relative to averages  
+✅ Includes **debug routes** for testing  
+✅ Uses **axios + cheerio** for reliable scraping  
+✅ Optional **PostgreSQL persistence**  
+✅ Ready for deployment on **Render / Railway / Heroku**  
+
+---
+
+## 📁 Project Structure
+
+```
+currency-exchange-api/
+├── src/
+│   ├── config/
+│   │   └── db.js                 # Database configuration
+│   ├── controllers/
+│   │   ├── averageController.js  # Handles average price calculations
+│   │   ├── quotesController.js   # Manages quotes fetching and caching
+│   │   └── slippageController.js # Computes slippage per source
+│   ├── middleware/
+│   │   └── errorHandler.js       # Global error handling
+│   ├── models/
+│   │   └── quotesModel.js        # Database operations for quotes
+│   ├── routes/
+│   │   ├── averageRoute.js       # Routes for average endpoints
+│   │   ├── debugRoute.js         # Debug and refresh routes
+│   │   ├── quotesRoute.js        # Quotes endpoints
+│   │   └── slippageRoute.js      # Slippage endpoints
+│   ├── services/
+│   │   └── fetchRates.js         # Core scraping and fetching logic
+│   ├── utils/
+│   │   ├── cache.js              # In-memory caching utilities
+│   │   └── helpers.js            # Helper functions
+│   └── server.js                 # Main server entry point
+├── scripts/
+│   ├── testFetch.js              # Standalone fetch testing
+│   └── testRefresh.js            # Cache refresh testing
+├── .env.example                  # Environment variables template
+├── .gitignore                    # Git ignore rules
+├── package.json                  # Dependencies and scripts
+├── postman_collection.json       # Postman API collection
+└── README.md                     # This file
 ```
 
-2. Start the server:
+---
+
+## 🧭 Available Endpoints
+
+| Method | Endpoint | Description |
+|--------|-----------|--------------|
+| `GET` | `/quotes` | Returns all current quotes with buy/sell prices, source, and timestamp |
+| `GET` | `/average` | Returns average buy/sell prices across available sources |
+| `GET` | `/slippage` | Returns per-source slippage relative to the average |
+| `GET` | `/debug/refresh` | Manually triggers a refresh of quotes inside the running server |
+
+---
+
+## 🧪 Example Requests (PowerShell)
 
 ```powershell
-npm run start
+Invoke-RestMethod -Uri https://currency-exchange-backend-2zim.onrender.com/quotes -Method GET | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Uri https://currency-exchange-backend-2zim.onrender.com/average -Method GET | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Uri https://currency-exchange-backend-2zim.onrender.com/slippage -Method GET | ConvertTo-Json -Depth 5
+Invoke-RestMethod -Uri https://currency-exchange-backend-2zim.onrender.com/debug/refresh -Method GET | ConvertTo-Json -Depth 5
 ```
 
-3. The server will log the mounted routes and the port (default 3000). Use Postman or PowerShell to call the endpoints described below.
+---
 
-**Live Deployed API:** https://currency-exchange-backend-2zim.onrender.com/
+## 🚀 Quick Start (Windows PowerShell)
 
-## Available endpoints
+1. **Clone the repository:**
+   ```powershell
+   git clone https://github.com/Kuldeep1462/Currency_Exchange_Backend.git
+   cd Currency_Exchange_Backend
+   ```
 
-- GET /quotes
-	- Returns an array of quotes (buy_price, sell_price, source, timestamp)
-- GET /average
-	- Returns the average_buy_price and average_sell_price across available sources
-- GET /slippage
-	- Returns per-source slippage relative to the averages
-- GET /debug/refresh
-	- Triggers a manual refresh of quotes inside the running server process and returns the annotated quotes (useful for ensuring the in-memory cache is populated)
+2. **Install dependencies:**
+   ```powershell
+   npm install
+   ```
 
-Example PowerShell requests:
+3. **Set up environment variables:**
+   - Copy `.env.example` to `.env`
+   - Configure your settings (PORT, REGION, DATABASE_URL if needed)
 
-```powershell
-Invoke-RestMethod -Uri http://localhost:3000/quotes -Method GET | ConvertTo-Json -Depth 5
-Invoke-RestMethod -Uri http://localhost:3000/average -Method GET | ConvertTo-Json -Depth 5
-Invoke-RestMethod -Uri http://localhost:3000/slippage -Method GET | ConvertTo-Json -Depth 5
-Invoke-RestMethod -Uri http://localhost:3000/debug/refresh -Method GET | ConvertTo-Json -Depth 5
-```
+4. **Start the server:**
+   ```powershell
+   npm run start
+   ```
 
-## Environment variables
+5. **Test the API:**
+   - Use the PowerShell commands above or import `postman_collection.json` into Postman
 
-Create a `.env` file in the project root or copy `.env.example`. Supported variables:
+---
 
-- PORT - port to run the server (default: 3000)
-- REGION - currency region (BRL or ARS). Controls which source list is used for scraping.
-- DATABASE_URL - optional Postgres connection string (if set, quotes are saved into the `quotes` table)
+## 🔧 Environment Variables
 
-## How fetching works
+Create a `.env` file in the project root (copy from `.env.example`):
 
-- The service scrapes a small list of public pages (configured in `src/services/fetchRates.js`) using `axios` and `cheerio`.
-- To improve reliability the code:
-	- Uses a realistic `User-Agent` header
-	- Uses an axios retry helper with exponential backoff and an increased timeout (30s)
-	- Attempts a public API fallback (`https://api.exchangerate.host/convert`) if scraping fails to ensure at least one live rate can be returned
-	- Keeps a mock fallback only as a last resort for local testing
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PORT` | Server port | `3000` |
+| `REGION` | Currency region (BRL or ARS) | `BRL` |
+| `DATABASE_URL` | PostgreSQL connection string (optional) | - |
 
-Notes:
-- Many finance websites render prices client-side or protect against bots. If you need robust scraping for a specific site, consider using Puppeteer/Playwright (headless browser) to render pages before parsing.
+---
 
-## Debugging and testing helpers
+## 🔍 How Fetching Works
 
-- `scripts/testFetch.js` — standalone script to run the fetcher (`fetchAllQuotes`) and print results. Useful for debugging scraping in isolation.
-- `scripts/testRefresh.js` — calls the controller `refreshQuotesCache()` in a separate process and prints annotated quotes; note this does not affect the running server's in-memory cache.
-- Use `GET /debug/refresh` to trigger `refreshQuotesCache()` inside the running server process so the server's cache is populated for subsequent requests to `/quotes`.
+- **Scraping:** Uses `axios` and `cheerio` to parse HTML from financial websites
+- **Reliability:** Implements retry logic with exponential backoff and realistic User-Agent headers
+- **Fallbacks:** If scraping fails, uses `https://api.exchangerate.host/convert` as backup
+- **Caching:** Stores results in memory for 60 seconds (configurable)
+- **Persistence:** Optionally saves to PostgreSQL for historical data
 
-## Postman
+---
 
-- A `postman_collection.json` file is included for quick import. Import it into Postman and set the `baseUrl` variable (default `http://localhost:3000`).
+## 🧪 Debugging and Testing
 
-## Database (optional)
+### Debug Endpoints
+- `GET /debug/refresh` - Force refresh the server's cache
 
-- If you set `DATABASE_URL`, the app will attempt to insert quotes into a `quotes` table via `src/models/quotesModel.js`. The insert operation is wrapped in a transaction and failures are logged but do not crash the server.
+### Logs
+The server provides detailed logs for:
+- Scraping attempts and results
+- API fallback usage
+- Cache hits/misses
+- Database operations
 
-Table schema suggestion (Postgres):
+---
+
+## 📮 Postman
+
+Import `postman_collection.json` into Postman for easy testing. Set the `baseUrl` variable to your local server or the live API.
+
+---
+
+## 🗄️ Database (Optional)
+
+If `DATABASE_URL` is set, quotes are saved to a `quotes` table:
 
 ```sql
 CREATE TABLE quotes (
-	id SERIAL PRIMARY KEY,
-	source TEXT,
-	buy_price NUMERIC,
-	sell_price NUMERIC,
-	currency TEXT,
-	created_at TIMESTAMPTZ DEFAULT NOW()
+    id SERIAL PRIMARY KEY,
+    source TEXT,
+    buy_price NUMERIC,
+    sell_price NUMERIC,
+    currency TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
-## Logs and runtime visibility
+---
+## 📄 License
 
-- The server prints helpful logs that show scraper attempts, parsed numeric values, retries, and fallbacks. Example log messages:
-	- `[fetchFromUrl] <url> - numbers found: [...]`
-	- `[axiosFetchWithRetry] attempt 1/3 failed for <url>: <error>`
-	- `[fetchAllQuotes] region=BRL - successful sources: X/3`
-	- `[fetchAllQuotes] API fallback succeeded`
+MIT License - see LICENSE file for details
 
-If `/quotes` returns an empty array in Postman, run:
-
-1. `GET /debug/refresh` to refresh the server's cache
-2. Check the server terminal logs for the scraping/fallback output
-
-## Development
-
-- Run in watch mode:
-
-```powershell
-npm run dev
-```
-
-## Deployment
-
-- This app can be deployed to Heroku/Render/Railway. Make sure to set `DATABASE_URL` and `PORT` in your hosting environment. Avoid exposing debug endpoints in production unless protected.
-
-## Extending reliability
-
-- If you want guaranteed scraping of JS-rendered pages, I can add optional Puppeteer-based site scrapers. This requires adding `puppeteer` (or `playwright`) to `package.json` and increases memory usage.
-
-## Contributing
-
-- Feel free to open issues or PRs. Keep scrapers site-specific and well-tested, and avoid hardcoding fragile selectors across many sites.
-
-## License
-
-MIT
-
+---
