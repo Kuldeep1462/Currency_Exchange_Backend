@@ -28,6 +28,8 @@ npm run start
 
 3. The server will log the mounted routes and the port (default 3000). Use Postman or PowerShell to call the endpoints described below.
 
+**Live Deployed API:** https://currency-exchange-backend-2zim.onrender.com/
+
 ## Available endpoints
 
 - GET /quotes
