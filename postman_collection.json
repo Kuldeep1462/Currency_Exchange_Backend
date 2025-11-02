@@ -1,0 +1,133 @@
+{
+  "info": {
+    "_postman_id": "9b2f6f49-0000-4000-8000-000000000000",
+    "name": "Currency Exchange API - Smoke Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "GET /quotes",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/quotes",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "quotes"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 503 (cache not ready)', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 503]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "    pm.test('Response is an array', function () {",
+              "        pm.expect(pm.response.json()).to.be.an('array');",
+              "    });",
+              "    pm.test('Items have source and buy_price', function () {",
+              "        const body = pm.response.json();",
+              "        if (body.length > 0) {",
+              "            pm.expect(body[0]).to.have.property('source');",
+              "            pm.expect(body[0]).to.have.property('buy_price');",
+              "        }",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /average",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/average",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "average"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 503 (cache not ready)', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 503]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "    pm.test('Response has average_buy_price and average_sell_price', function () {",
+              "        const body = pm.response.json();",
+              "        pm.expect(body).to.have.property('average_buy_price');",
+              "        pm.expect(body).to.have.property('average_sell_price');",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET /slippage",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/slippage",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "slippage"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 or 503 (cache not ready)', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200, 503]);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "    pm.test('Response is an array of slippage objects', function () {",
+              "        const body = pm.response.json();",
+              "        pm.expect(body).to.be.an('array');",
+              "        if (body.length > 0) {",
+              "            pm.expect(body[0]).to.have.property('source');",
+              "            pm.expect(body[0]).to.have.property('buy_price_slippage');",
+              "            pm.expect(body[0]).to.have.property('sell_price_slippage');",
+              "        }",
+              "    });",
+              "}"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
